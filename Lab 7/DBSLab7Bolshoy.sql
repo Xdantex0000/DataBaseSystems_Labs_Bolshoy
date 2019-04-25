@@ -1,0 +1,161 @@
+-- 1) Створити збережену процедуру, що при виклику буде повертати ваше прізвище, ім’я та по-батькові.
+--CREATE PROCEDURE GetMyName AS
+--  BEGIN
+--    SELECT 'Bolshoy' AS SecondName,'Oleksandr' AS FirstName,'Olegovich' AS Patronymic
+--  END;
+----DROP PROCEDURE GetMyName;
+--exec GetMyName;
+
+-- 2) В контексті бази Northwind створити збережену процедуру, що приймає текстовий параметр мінімальної довжини. 
+--    При виклику процедури з параметром «F» на екран виводяться усі співробітники-жінки, а для параметра
+--    «M» – чоловіки. У протилежному випадку вивести на екран повідомлення про те, що параметр не розпізнано.
+--USE Northwind;
+--GO
+--CREATE PROCEDURE GenderInfo @gender NVARCHAR(1) AS
+--  BEGIN
+--    IF @gender = 'F' SELECT * FROM Employees WHERE TitleOfCourtesy = 'Ms.'
+--    ELSE IF @gender = 'M' SELECT * FROM Employees WHERE TitleOfCourtesy = 'Mr.'
+--    ELSE SELECT 'NO SUCH PARAMETER FOUND' AS Error
+--  END;
+----DROP PROCEDURE GenderInfo
+--exec GenderInfo 'F';
+
+-- 3) В контексті бази Northwind створити збережену процедуру, що виводить усі замовлення за заданий період. 
+--    Якщо період не задано – вивести замовлення за поточний день.
+--USE Northwind;
+--GO
+--CREATE PROCEDURE OrdersInfo @firstdate DATE = null, @seconddate DATE = null, @today DATE = '1997-04-25' AS
+--  BEGIN
+--    IF @firstdate IS NOT NULL AND @seconddate IS NOT NULL 
+--	  SELECT * FROM Orders WHERE OrderDate BETWEEN @firstdate AND @seconddate
+--	ELSE SELECT * FROM Orders WHERE OrderDate = @today
+--  END;
+----DROP PROCEDURE OrdersInfo;
+--exec OrdersInfo '1996-02-02', '1997-01-09';
+
+-- 4) В контексті бази Northwind створити збережену процедуру, що залежно від переданого параметру 
+--    категорії виводить категорію та перелік усіх продуктів за цією категорією.
+--    Дозволити використання від однієї до п’яти категорій.
+--USE Northwind;
+--GO
+--CREATE PROCEDURE CategoryProductsInfo @firstcat INT, @secondcat INT = 0, @thirdcat INT = 0, @fourthcat INT = 0, @fifthcat INT = 0
+--  AS
+--    BEGIN
+--     SELECT * FROM Products WHERE CategoryID = @firstcat OR CategoryID = @secondcat OR CategoryID = @thirdcat OR CategoryID = @fourthcat OR CategoryID =  @fifthcat
+--	 ORDER BY CategoryID;
+--    END;
+----DROP PROCEDURE CategoryProductsInfo;
+--GO
+--exec CategoryProductsInfo 1,3,5,6;
+
+-- 5) В контексті бази Northwind модифікувати збережену процедуру Ten Most Expensive Products 
+--    для виводу всієї інформації з таблиці продуктів, а також імен постачальників та назви категорій.
+--USE Northwind;
+--GO
+--ALTER PROCEDURE  [Ten Most Expensive Products]
+--  AS
+--  BEGIN
+--   SELECT ProductID,ProductName,Products.SupplierID,Products.CategoryID,QuantityPerUnit,UnitPrice,UnitsInStock,UnitsOnOrder,ReorderLevel,Discontinued,CategoryName,ContactName
+--    FROM Products
+--      JOIN Categories ON Categories.CategoryID=Products.CategoryID
+--      JOIN Suppliers ON Products.SupplierID = Suppliers.SupplierID;
+--  END;
+--
+--GO
+--exec [Ten Most Expensive Products];
+
+-- 6) В контексті бази Northwind створити функцію, що приймає три параметри (TitleOfCourtesy, FirstName, LastName)
+--    та виводить їх єдиним текстом. Приклад: «Dr.», «Yevhen», «Nedashkivskyi» –> «Dr. Yevhen Nedashkivskyi».
+--USE Northwind;
+--GO
+--CREATE FUNCTION dbo.SplitFullName
+--(
+--  @TitleOfCourtesy VARCHAR(20),
+--  @FirstName VARCHAR(20), 
+--  @LastName VARCHAR(20)
+--)
+--RETURNS VARCHAR(60)
+--  AS
+--    BEGIN
+--      DECLARE  @concat varchar(60) = concat(@TitleOfCourtesy,' ',@FirstName,' ',@LastName);
+--      RETURN @concat;
+--    END;
+
+--GO
+--select dbo.SplitFullName('Dr.','Yevhen', 'Nedashkivskyi') AS Concat;
+
+-- 7) В контексті бази Northwind створити функцію, що приймає три параметри 
+--    (UnitPrice, Quantity, Discount) та виводить кінцеву ціну.
+--USE Northwind;
+--GO
+--CREATE FUNCTION dbo.GetPrice
+--(
+--  @UnitPrice FLOAT,
+--  @Quantity FLOAT,
+--  @Discount FLOAT
+--)
+--RETURNS FLOAT
+--  AS
+--    BEGIN
+--	  RETURN (@UnitPrice*@Quantity) - (@UnitPrice*@Quantity*@Discount);
+--	END
+--
+--GO
+--SELECT dbo.GetPrice(100.50,10,0.05) AS Price;
+	  
+-- 8) Створити функцію, що приймає параметр текстового типу і зводить його до Pascal Case.
+--    Приклад: «Мій маленький поні» –> «МійМаленькийПоні».
+--CREATE FUNCTION dbo.PascalCaseMaker
+--(
+--  @str AS VARCHAR(MAX)
+--)
+--RETURNS VARCHAR(MAX)
+--  BEGIN
+--    SET @str = LOWER(@str)
+--
+--    DECLARE @result VARCHAR(MAX) = ''
+--
+--    DECLARE @spaceIndex INT = CHARINDEX(' ', @str)
+--    WHILE @spaceIndex > 0
+--      BEGIN
+--        SET @result += UPPER(SUBSTRING(@str, 1, 1)) + SUBSTRING(@str,  2, @spaceIndex - 2)
+--        SET @str = SUBSTRING(@str, @spaceIndex + 1, 12345678)
+--        SET @spaceIndex = CHARINDEX(' ', @str)
+--      END
+--    SET @result += UPPER(SUBSTRING(@str, 1, 1)) + SUBSTRING(@str, 2, 12345678)
+--    RETURN @result
+--  END
+--
+--GO
+--SELECT dbo.PascalCaseMaker('Мій маленький поні') as PascalCase;
+
+-- 9) В контексті бази Northwind створити функцію, яка залежно від вказаної країни
+--    повертає усі дані про співробітника у вигляді таблиці.
+--USE Northwind;
+--GO
+--CREATE FUNCTION dbo.WorkerCountry
+--(
+--  @country VARCHAR(20)
+--)
+--RETURNS TABLE
+--  AS
+--  RETURN SELECT * FROM Employees WHERE Country = @country;
+--
+--GO
+--SELECT * FROM dbo.WorkerCountry('UK');
+
+-- 10) В контексті бази Northwind створити функцію, яка залежно від імені 
+--     транспортної компанії повертає список клієнтів, якою вони обслуговуються.
+--USE Northwind;
+--GO
+--CREATE FUNCTION dbo.TransportClients
+--(
+--  @country VARCHAR(20)
+--)
+--RETURNS TABLE
+--  AS
+--    RETURN SELECT * FROM  Customers WHERE CustomerID IN(SELECT CustomerID FROM Orders WHERE ShipVia IN(SELECT ShipVia FROM Shippers WHERE CompanyName = @country));
+--
+--GO
+--SELECT * FROM dbo.TransportClients('Speedy Express');
+--SELECT CompanyName FROM Shippers;
